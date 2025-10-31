@@ -1,4 +1,4 @@
-import { doesBrowserSupportBuiltInAI } from "@built-in-ai/core";
+import { doesBrowserSupportWebLLM } from "@built-in-ai/web-llm";
 import { useEffect, useState } from "react";
 
 export function useBrowserAISupport() {
@@ -7,7 +7,7 @@ export function useBrowserAISupport() {
   >(null);
 
   useEffect(() => {
-    setBrowserSupportsModel(doesBrowserSupportBuiltInAI());
+    setBrowserSupportsModel(doesBrowserSupportWebLLM());
   }, []);
 
   return browserSupportsModel;

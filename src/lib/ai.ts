@@ -1,8 +1,7 @@
-// Gemini Nano built-in AI automatically selects the appropriate browser model
-// Chrome: Gemini Nano
-// Edge: Phi4-mini
+// WebLLM with Qwen provides browser-based AI inference via WebGPU
+// Uses Qwen 0.6B for fast, lightweight inference
 export const MODEL_INFO = {
-  name: "Built-in AI (Gemini Nano/Phi4)",
+  name: "Qwen 0.6B (WebLLM)",
   description:
-    "Uses browser's built-in AI model - Gemini Nano on Chrome, Phi4-mini on Edge",
+    "Uses Qwen 0.6B model running locally in your browser via WebGPU - fast, private, and works on all WebGPU-compatible browsers",
 };

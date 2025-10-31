@@ -4,11 +4,12 @@
 
 ## Overview
 
-A privacy-first chat interface that leverages your browser's built-in AI capabilities. All inference happens locally on your device - your conversations never leave your browser.
+A privacy-first chat interface powered by WebLLM and Qwen. All inference happens locally on your device - your conversations never leave your browser.
 
 **Supported browsers:**
-- Chrome 128+ (Gemini Nano)
-- Edge 138+ (Phi-4 Mini)
+- Chrome 113+ (WebGPU support)
+- Edge 113+ (WebGPU support)
+- Safari 18+ (WebGPU support)
 
 ## Features
 
@@ -22,8 +23,9 @@ A privacy-first chat interface that leverages your browser's built-in AI capabil
 ## Tech Stack
 
 - [TanStack Start](https://tanstack.com/start) - Full-stack React framework
-- [@built-in-ai/core](https://github.com/built-in-ai/core) - Browser Built-in AI integration
+- [@built-in-ai/web-llm](https://github.com/jakobhoeg/built-in-ai/tree/main/packages/web-llm) - WebLLM integration for AI SDK
 - [AI SDK](https://ai-sdk.dev/) - Streaming and message handling
+- [Qwen 0.6B](https://huggingface.co/Qwen) - Lightweight language model
 - React 19, TypeScript, Tailwind CSS
 
 ## Quick Start
@@ -36,13 +38,13 @@ pnpm install
 pnpm dev
 ```
 
-Open http://localhost:3000 in Chrome 128+ or Edge 138+.
+Open http://localhost:3000 in any WebGPU-compatible browser.
 
 ## How It Works
 
-This app uses the experimental Browser Built-in AI APIs that are currently available in Chrome and Edge. On first use, the AI model (Gemini Nano in Chrome or Phi-4 Mini in Edge) will be downloaded and cached locally.
+This app uses WebLLM to run the Qwen 0.6B language model entirely in your browser via WebGPU. On first use, the model (~400MB) will be downloaded and cached locally.
 
-All processing happens on your device using WebGPU for hardware acceleration. No data is sent to external servers.
+All processing happens on your device using WebGPU for hardware acceleration. The model runs in a dedicated Web Worker to avoid blocking the UI thread, ensuring smooth performance. No data is sent to external servers. The Qwen 0.6B model provides a perfect balance between performance and capability for browser-based inference.
 
 ## Project Structure
 
@@ -58,7 +60,8 @@ src/
 │   ├── header.tsx              # App header
 │   └── footer.tsx              # App footer
 ├── lib/
-│   └── client-side-chat-transport.ts  # Browser AI integration
+│   ├── client-side-chat-transport.ts  # Browser AI integration
+│   └── webllm-worker.ts        # Web Worker for WebLLM
 ├── hooks/
 │   └── use-browser-ai-support.ts      # Browser compatibility check
 └── types/
@@ -78,12 +81,13 @@ src/
 
 ## Browser Requirements
 
-This app requires a browser with Built-in AI support:
+This app requires a browser with WebGPU support:
 
-- **Chrome 128+** with Gemini Nano enabled
-- **Edge 138+** with Phi-4 Mini enabled
+- **Chrome 113+** - Full WebGPU support
+- **Edge 113+** - Full WebGPU support
+- **Safari 18+** - WebGPU support (macOS Sonoma+)
 
-If your browser doesn't support Built-in AI, you'll see a warning message on the chat interface.
+If your browser doesn't support WebGPU, you'll see a warning message on the chat interface. Check [WebGPU browser compatibility](https://caniuse.com/webgpu) for the latest support status.
 
 ## Privacy & Data
 

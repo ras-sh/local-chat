@@ -10,9 +10,15 @@ import {
   MessageAvatar,
   MessageContent,
 } from "~/components/ai-elements/message";
+import {
+  Reasoning,
+  ReasoningContent,
+  ReasoningTrigger,
+} from "~/components/ai-elements/reasoning";
 import { Response } from "~/components/ai-elements/response";
 import { Button } from "~/components/ui/button";
 import type { ExtendedBuiltInAIUIMessage } from "~/types/ui-message";
+import { CodeBlock } from "./ai-elements/code-block";
 
 type ChatMessagesProps = {
   messages: ExtendedBuiltInAIUIMessage[];
@@ -51,81 +57,88 @@ export function ChatMessages({
                 }
               />
               <MessageContent>
-                {/* Download Progress */}
-                {message.parts
-                  .filter((part) => part.type === "data-modelDownloadProgress")
-                  .map((part, partIndex) => {
-                    if (!part.data.message || status === "ready") {
-                      return null;
-                    }
-
-                    return (
-                      <div className="mb-4 space-y-2" key={partIndex}>
-                        <p className="text-base text-zinc-400">
-                          {part.data.message}
-                        </p>
-                        {part.data.status === "downloading" &&
-                          part.data.progress !== undefined && (
-                            <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-800">
-                              <div
-                                className="h-full rounded-full bg-zinc-100 transition-all duration-300"
-                                style={{
-                                  width: `${part.data.progress}%`,
-                                }}
-                              />
-                            </div>
-                          )}
-                      </div>
-                    );
-                  })}
-
-                {/* File Parts */}
-                {message.parts
-                  .filter((part) => part.type === "file")
-                  .map((part, partIndex) => {
-                    if (part.mediaType?.startsWith("image/")) {
+                {/* Message Parts Content */}
+                {message.parts.map((part, i) => {
+                  switch (part.type) {
+                    case "text":
                       return (
-                        <div className="mb-3" key={partIndex}>
-                          <img
-                            alt={part.filename || "Uploaded image"}
-                            className="max-w-md rounded-lg"
-                            src={part.url}
-                          />
+                        <Response key={`${message.id}-${i}`}>
+                          {part.text}
+                        </Response>
+                      );
+                    case "reasoning":
+                      return (
+                        <Reasoning
+                          className="w-full"
+                          defaultOpen={false}
+                          isStreaming={
+                            status === "streaming" &&
+                            i === message.parts.length - 1 &&
+                            message.id === messages.at(-1)?.id
+                          }
+                          key={`${message.id}-${i}`}
+                        >
+                          <ReasoningTrigger />
+                          <ReasoningContent>{part.text}</ReasoningContent>
+                        </Reasoning>
+                      );
+                    case "data-modelDownloadProgress":
+                      if (!part.data.message || status === "ready") {
+                        return null;
+                      }
+                      return (
+                        <div className="space-y-2" key={`${message.id}-${i}`}>
+                          <Response>{part.data.message}</Response>
+                          {part.data.status === "downloading" &&
+                            part.data.progress !== undefined && (
+                              <div className="-mt-2 h-2 w-full overflow-hidden rounded-full bg-zinc-800">
+                                <div
+                                  className="h-full rounded-full bg-zinc-100 transition-all duration-300"
+                                  style={{ width: `${part.data.progress}%` }}
+                                />
+                              </div>
+                            )}
                         </div>
                       );
-                    }
-
-                    if (part.mediaType?.startsWith("audio/")) {
-                      return (
-                        <div className="mb-3 space-y-2" key={partIndex}>
-                          <audio
-                            className="w-full max-w-md"
-                            controls
-                            src={part.url}
+                    case "file":
+                      if (part.mediaType?.startsWith("image/")) {
+                        return (
+                          <div className="mb-3" key={`${message.id}-${i}`}>
+                            <img
+                              alt={part.filename || "Uploaded image"}
+                              className="max-w-md rounded-lg"
+                              src={part.url}
+                            />
+                          </div>
+                        );
+                      }
+                      if (part.mediaType?.startsWith("audio/")) {
+                        return (
+                          <div
+                            className="mb-3 space-y-2"
+                            key={`${message.id}-${i}`}
                           >
-                            <track kind="captions" />
-                            Your browser does not support the audio element.
-                          </audio>
-                          {part.filename && (
-                            <p className="text-sm text-zinc-400">
-                              {part.filename}
-                            </p>
-                          )}
-                        </div>
-                      );
-                    }
-
-                    return null;
-                  })}
-
-                {/* Text Content */}
-                {message.parts
-                  .filter((part) => part.type === "text")
-                  .map((part, partIndex) => (
-                    <div className="leading-relaxed" key={partIndex}>
-                      <Response>{part.text}</Response>
-                    </div>
-                  ))}
+                            <audio
+                              className="w-full max-w-md"
+                              controls
+                              src={part.url}
+                            >
+                              <track kind="captions" />
+                              Your browser does not support the audio element.
+                            </audio>
+                            {part.filename && (
+                              <p className="text-sm text-zinc-400">
+                                {part.filename}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      }
+                      return null;
+                    default:
+                      return null;
+                  }
+                })}
               </MessageContent>
             </Message>
           ))}
@@ -163,10 +176,14 @@ export function ChatMessages({
                 onClick={onRegenerate}
                 size="sm"
                 type="button"
-                variant="ghost"
               >
                 Retry
               </Button>
+              <CodeBlock
+                className="mt-3"
+                code={error.message}
+                language="json"
+              />
             </div>
           )}
         </div>

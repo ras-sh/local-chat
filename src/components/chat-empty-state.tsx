@@ -37,8 +37,9 @@ export function ChatEmptyState({ onSuggestionClick }: ChatEmptyStateProps) {
         <div className="-translate-x-1/2 absolute top-4 left-1/2 z-10 w-full max-w-2xl px-4">
           <Alert variant="destructive">
             <AlertDescription>
-              Your browser doesn't support built-in AI. Please use Chrome 128+
-              or Edge 138+.
+              Your browser doesn't support WebGPU, which is required for running
+              AI models. Please use a WebGPU-compatible browser (Chrome 113+,
+              Edge 113+, or Safari 18+).
             </AlertDescription>
           </Alert>
         </div>

@@ -1,24 +1,46 @@
-import { builtInAI } from "@built-in-ai/core";
+import { doesBrowserSupportWebLLM, webLLM } from "@built-in-ai/web-llm";
 import {
   type ChatRequestOptions,
   type ChatTransport,
   convertToModelMessages,
   createUIMessageStream,
-  streamObject,
+  extractReasoningMiddleware,
+  streamText,
   type UIMessageChunk,
+  wrapLanguageModel,
 } from "ai";
-import { z } from "zod";
 import type { ExtendedBuiltInAIUIMessage } from "~/types/ui-message";
 
 /**
  * Client-side chat transport implementation that handles AI model communication
- * with in-browser AI capabilities (Gemini Nano/Phi4).
+ * with WebLLM using Qwen as the browser-based model.
+ *
+ * Best practices implemented:
+ * - Web Worker for offloading heavy computation from UI thread
+ * - Browser capability checks before operations
+ * - Proper availability state management
+ * - Progress tracking for model downloads
  *
  * @implements {ChatTransport<ExtendedBuiltInAIUIMessage>}
  */
 export class ClientSideChatTransport
   implements ChatTransport<ExtendedBuiltInAIUIMessage>
 {
+  private worker: Worker | null = null;
+
+  /**
+   * Get or create the WebLLM worker instance.
+   * Using a worker offloads heavy model computation to a different thread than the UI.
+   */
+  private getWorker(): Worker {
+    if (!this.worker) {
+      this.worker = new Worker(new URL("./webllm-worker.ts", import.meta.url), {
+        type: "module",
+      });
+    }
+    return this.worker;
+  }
+
   async sendMessages(
     options: {
       chatId: string;
@@ -31,92 +53,91 @@ export class ClientSideChatTransport
   ): Promise<ReadableStream<UIMessageChunk>> {
     const { messages, abortSignal } = options;
 
-    const prompt = convertToModelMessages(messages);
-    const model = builtInAI();
+    // Best practice: Verify browser capability before attempting operations
+    if (!doesBrowserSupportWebLLM()) {
+      return createUIMessageStream<ExtendedBuiltInAIUIMessage>({
+        execute: ({ writer }) => {
+          writer.write({
+            type: "data-notification",
+            data: {
+              message:
+                "WebGPU is not supported in this browser. Please use a WebGPU-compatible browser.",
+              level: "error",
+            },
+            transient: true,
+          });
+        },
+      });
+    }
 
-    // Check if model is already available to skip progress tracking
-    const availability = await model.availability();
+    const prompt = convertToModelMessages(messages);
+    // Use Qwen 0.6B for fast, lightweight inference in the browser
+    // Run in a Web Worker to avoid blocking the UI thread
+    const baseModel = webLLM("Qwen3-0.6B-q0f16-MLC", {
+      worker: this.getWorker(),
+    });
+
+    // Wrap model with reasoning extraction middleware
+    const model = wrapLanguageModel({
+      model: baseModel,
+      middleware: extractReasoningMiddleware({ tagName: "think" }),
+    });
+
+    // Best practice: Check availability state before operations
+    // States: "unavailable" | "downloadable" | "downloading" | "available"
+    const availability = await baseModel.availability();
     if (availability === "available") {
       return createUIMessageStream<ExtendedBuiltInAIUIMessage>({
         execute: async ({ writer }) => {
-          const result = streamObject({
+          const result = streamText({
             model,
-            schema: z.object({
-              response: z
-                .string()
-                .describe("The assistant's brief response to the user"),
-              suggestions: z
-                .array(z.string())
-                .describe(
-                  "3-4 relevant follow-up questions the USER could ask next (from the user's perspective, not the assistant's)"
-                ),
-            }),
             system:
-              "Be concise and brief in your responses. Keep answers short and to the point. When providing suggestions, write them from the USER's perspective as questions they might want to ask YOU next.",
+              "You are a helpful AI assistant. Be concise and brief in your responses. Keep answers short and to the point. When you need to think through a problem or reason about something, wrap your reasoning in <think> tags.",
             messages: prompt,
             abortSignal,
           });
 
-          let textId: string | undefined;
-          let previousText = "";
-
-          for await (const partialObject of result.partialObjectStream) {
-            if (
-              partialObject.response &&
-              partialObject.response !== previousText
-            ) {
-              if (!textId) {
-                textId = `text-${Date.now()}`;
-                writer.write({
-                  type: "text-start",
-                  id: textId,
-                });
-              }
-              const delta = partialObject.response.slice(previousText.length);
-              if (delta) {
+          // Consume the fullStream to get all chunks including reasoning
+          for await (const chunk of result.fullStream) {
+            // Map the chunk types from fullStream to UIMessageChunk format
+            switch (chunk.type) {
+              case "text-delta":
                 writer.write({
                   type: "text-delta",
-                  id: textId,
-                  delta,
+                  id: chunk.id,
+                  delta: chunk.text,
                 });
-              }
-              previousText = partialObject.response;
+                break;
+              case "reasoning-delta":
+                writer.write({
+                  type: "reasoning-delta",
+                  id: chunk.id,
+                  delta: chunk.text,
+                });
+                break;
+              // Pass through other chunk types
+              default:
+                writer.write(chunk as any);
             }
-          }
-
-          // End the text stream
-          if (textId) {
-            writer.write({
-              type: "text-end",
-              id: textId,
-            });
-          }
-
-          // Send suggestions after the response is complete
-          const finalObject = await result.object;
-          if (finalObject.suggestions && finalObject.suggestions.length > 0) {
-            writer.write({
-              type: "data-suggestions",
-              id: `suggestions-${Date.now()}`,
-              data: finalObject.suggestions,
-            });
           }
         },
       });
     }
 
-    // Handle model download with progress tracking
+    // Best practice: Handle model download with progress tracking
+    // Progress callback receives WebLLMProgress with: progress (0-1), timeElapsedMs, text
     return createUIMessageStream<ExtendedBuiltInAIUIMessage>({
       execute: async ({ writer }) => {
         try {
           let downloadProgressId: string | undefined;
 
-          // Download/prepare model with progress monitoring
-          await model.createSessionWithProgress((progress: number) => {
-            const percent = Math.round(progress * 100);
+          // Best practice: Use createSessionWithProgress for monitoring initialization
+          // Critical for UX, especially with large model downloads
+          await baseModel.createSessionWithProgress((progressReport) => {
+            const percent = Math.round(progressReport.progress * 100);
 
-            if (progress >= 1) {
-              // Download complete
+            if (progressReport.progress >= 1) {
+              // Download complete - ready for inference
               if (downloadProgressId) {
                 writer.write({
                   type: "data-modelDownloadProgress",
@@ -132,7 +153,7 @@ export class ClientSideChatTransport
               return;
             }
 
-            // First progress update
+            // First progress update - initialize tracking
             if (!downloadProgressId) {
               downloadProgressId = `download-${Date.now()}`;
               writer.write({
@@ -141,99 +162,68 @@ export class ClientSideChatTransport
                 data: {
                   status: "downloading",
                   progress: percent,
-                  message: "Downloading browser AI model...",
+                  message:
+                    progressReport.text || "Downloading browser AI model...",
                 },
                 transient: true,
               });
               return;
             }
 
-            // Ongoing progress updates
+            // Ongoing progress updates - track download state
             writer.write({
               type: "data-modelDownloadProgress",
               id: downloadProgressId,
               data: {
                 status: "downloading",
                 progress: percent,
-                message: `Downloading browser AI model... ${percent}%`,
+                message:
+                  progressReport.text ||
+                  `Downloading browser AI model... ${percent}%`,
               },
             });
           });
 
-          // Stream the actual object response
-          const result = streamObject({
+          // Stream the actual text response after model is ready
+          const result = streamText({
             model,
-            schema: z.object({
-              response: z
-                .string()
-                .describe("The assistant's brief response to the user"),
-              suggestions: z
-                .array(z.string())
-                .describe(
-                  "3-4 relevant follow-up questions the USER could ask next (from the user's perspective, not the assistant's)"
-                ),
-            }),
             system:
-              "Be concise and brief in your responses. Keep answers short and to the point. When providing suggestions, write them from the USER's perspective as questions they might want to ask YOU next.",
+              "You are a helpful AI assistant. Be concise and brief in your responses. Keep answers short and to the point. When you need to think through a problem or reason about something, wrap your reasoning in <think> tags.",
             messages: prompt,
             abortSignal,
           });
 
-          let textId: string | undefined;
-          let previousText = "";
-          let firstChunk = true;
+          // Clear progress message before streaming response
+          if (downloadProgressId) {
+            writer.write({
+              type: "data-modelDownloadProgress",
+              id: downloadProgressId,
+              data: { status: "complete", progress: 100, message: "" },
+            });
+          }
 
-          for await (const partialObject of result.partialObjectStream) {
-            // Clear progress message on first chunk
-            if (firstChunk && downloadProgressId) {
-              writer.write({
-                type: "data-modelDownloadProgress",
-                id: downloadProgressId,
-                data: { status: "complete", progress: 100, message: "" },
-              });
-              downloadProgressId = undefined;
-              firstChunk = false;
-            }
-
-            if (
-              partialObject.response &&
-              partialObject.response !== previousText
-            ) {
-              if (!textId) {
-                textId = `text-${Date.now()}`;
-                writer.write({
-                  type: "text-start",
-                  id: textId,
-                });
-              }
-              const delta = partialObject.response.slice(previousText.length);
-              if (delta) {
+          // Consume the fullStream to get all chunks including reasoning
+          for await (const chunk of result.fullStream) {
+            // Map the chunk types from fullStream to UIMessageChunk format
+            switch (chunk.type) {
+              case "text-delta":
                 writer.write({
                   type: "text-delta",
-                  id: textId,
-                  delta,
+                  id: chunk.id,
+                  delta: chunk.text,
                 });
-              }
-              previousText = partialObject.response;
+                break;
+              case "reasoning-delta":
+                writer.write({
+                  type: "reasoning-delta",
+                  id: chunk.id,
+                  delta: chunk.text,
+                });
+                break;
+              // Pass through other chunk types
+              default:
+                writer.write(chunk as any);
             }
-          }
-
-          // End the text stream
-          if (textId) {
-            writer.write({
-              type: "text-end",
-              id: textId,
-            });
-          }
-
-          // Send suggestions after the response is complete
-          const finalObject = await result.object;
-          if (finalObject.suggestions && finalObject.suggestions.length > 0) {
-            writer.write({
-              type: "data-suggestions",
-              id: `suggestions-${Date.now()}`,
-              data: finalObject.suggestions,
-            });
           }
         } catch (error) {
           writer.write({
