@@ -1,4 +1,4 @@
-import { doesBrowserSupportTransformersJS } from "@built-in-ai/transformers-js";
+import { doesBrowserSupportBuiltInAI } from "@built-in-ai/core";
 import { useEffect, useState } from "react";
 
 export function useBrowserAISupport() {
@@ -7,7 +7,7 @@ export function useBrowserAISupport() {
   >(null);
 
   useEffect(() => {
-    setBrowserSupportsModel(doesBrowserSupportTransformersJS());
+    setBrowserSupportsModel(doesBrowserSupportBuiltInAI());
   }, []);
 
   return browserSupportsModel;

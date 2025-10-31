@@ -1,7 +1,4 @@
-import {
-  doesBrowserSupportTransformersJS,
-  transformersJS,
-} from "@built-in-ai/transformers-js";
+import { builtInAI, doesBrowserSupportBuiltInAI } from "@built-in-ai/core";
 import {
   type ChatRequestOptions,
   type ChatTransport,
@@ -19,10 +16,9 @@ const SYSTEM_PROMPT =
 
 /**
  * Client-side chat transport implementation that handles AI model communication
- * with Transformers.js using SmolLM2 as the browser-based model.
+ * using Chrome's built-in Prompt API.
  *
  * Best practices implemented:
- * - Web Worker for offloading heavy computation from UI thread
  * - Browser capability checks before operations
  * - Proper availability state management
  * - Progress tracking for model downloads
@@ -32,30 +28,11 @@ const SYSTEM_PROMPT =
 export class ClientSideChatTransport
   implements ChatTransport<ExtendedBuiltInAIUIMessage>
 {
-  private worker: Worker | null = null;
-
-  /**
-   * Get or create the Transformers.js worker instance.
-   * Using a worker offloads heavy model computation to a different thread than the UI.
-   */
-  private getWorker(): Worker {
-    if (!this.worker) {
-      this.worker = new Worker(
-        new URL("./transformers-worker.ts", import.meta.url),
-        { type: "module" }
-      );
-    }
-    return this.worker;
-  }
-
   /**
    * Initialize and return the base model with reasoning middleware.
    */
   private createModel() {
-    const baseModel = transformersJS("HuggingFaceTB/SmolLM2-360M-Instruct", {
-      worker: this.getWorker(),
-      dtype: "q4",
-    });
+    const baseModel = builtInAI();
 
     const model = wrapLanguageModel({
       model: baseModel,
@@ -146,14 +123,14 @@ export class ClientSideChatTransport
     const { messages, abortSignal } = options;
 
     // Best practice: Verify browser capability before attempting operations
-    if (!doesBrowserSupportTransformersJS()) {
+    if (!doesBrowserSupportBuiltInAI()) {
       return createUIMessageStream<ExtendedBuiltInAIUIMessage>({
         execute: ({ writer }) => {
           writer.write({
             type: "data-notification",
             data: {
               message:
-                "WebGPU/WebAssembly is not supported in this browser. Please use a compatible browser.",
+                "Browser AI is not supported in this browser. Please use Chrome 128+ or Edge Dev with Prompt API enabled.",
               level: "error",
             },
             transient: true,
@@ -164,12 +141,11 @@ export class ClientSideChatTransport
 
     const prompt = convertToModelMessages(messages);
 
-    // Use SmolLM2-360M for fast, lightweight inference in the browser
-    // Run in a Web Worker to avoid blocking the UI thread
+    // Use Chrome's built-in Prompt API for fast, efficient inference
     const { baseModel, model } = this.createModel();
 
     // Best practice: Check availability state before operations
-    // States: "unavailable" | "downloadable" | "downloading" | "available"
+    // States: "unavailable" | "downloadable" | "available"
     const availability = await baseModel.availability();
     if (availability === "available") {
       return createUIMessageStream<ExtendedBuiltInAIUIMessage>({
@@ -180,19 +156,18 @@ export class ClientSideChatTransport
     }
 
     // Best practice: Handle model download with progress tracking
-    // Progress callback receives WebLLMProgress with: progress (0-1), timeElapsedMs, text
     return createUIMessageStream<ExtendedBuiltInAIUIMessage>({
       execute: async ({ writer }) => {
         try {
           let downloadProgressId: string | undefined;
 
           // Best practice: Use createSessionWithProgress for monitoring initialization
-          // Critical for UX, especially with large model downloads
+          // Critical for UX, especially with model downloads
           await baseModel.createSessionWithProgress(
-            (progressReport: { progress: number }) => {
-              const percent = Math.round(progressReport.progress * 100);
+            (progress: number) => {
+              const percent = Math.round(progress * 100);
 
-              if (progressReport.progress >= 1) {
+              if (progress >= 1) {
                 // Download complete - ready for inference
                 if (downloadProgressId) {
                   this.writeDownloadProgress({
