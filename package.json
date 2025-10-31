@@ -32,8 +32,8 @@
     "@fontsource-variable/geist": "^5.2.8",
     "@fontsource-variable/geist-mono": "^5.2.7",
     "@ras-sh/ui": "^0.0.6",
-    "@tanstack/react-router": "^1.133.35",
-    "@tanstack/react-start": "^1.133.35",
+    "@tanstack/react-router": "^1.133.36",
+    "@tanstack/react-start": "^1.134.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -45,11 +45,11 @@
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react-swc": "^4.2.0",
-    "lefthook": "^2.0.1",
+    "lefthook": "^2.0.2",
     "nitro": "3.0.1-alpha.0",
     "tailwindcss": "^4.1.16",
     "typescript": "^5.9.3",
-    "ultracite": "6.0.5",
+    "ultracite": "6.1.0",
     "vite": "^7.1.12",
     "vite-tsconfig-paths": "^5.1.4"
   }
