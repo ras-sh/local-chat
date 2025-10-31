@@ -74,6 +74,7 @@ export function ChatInput({
         <PromptInputBody>
           <PromptInputTextarea
             autoFocus
+            className="text-base!"
             disabled={isDisabled}
             onChange={(e) => onInputChange(e.target.value)}
             placeholder="Ask anything..."

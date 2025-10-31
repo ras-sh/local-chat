@@ -24,11 +24,11 @@ const messageContentVariants = cva("flex flex-col gap-2 text-base", {
   variants: {
     variant: {
       contained: [
-        "group-[.is-user]:text-right group-[.is-user]:font-medium",
+        "group-[.is-user]:rounded-lg group-[.is-user]:bg-muted group-[.is-user]:px-4 group-[.is-user]:py-2.5 group-[.is-user]:text-right",
         "group-[.is-assistant]:flex-1",
       ],
       flat: [
-        "group-[.is-user]:text-right group-[.is-user]:font-medium",
+        "group-[.is-user]:rounded-lg group-[.is-user]:bg-muted group-[.is-user]:px-4 group-[.is-user]:py-2.5 group-[.is-user]:text-right",
         "group-[.is-assistant]:flex-1",
       ],
     },
