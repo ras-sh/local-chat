@@ -252,6 +252,6 @@ export class ClientSideChatTransport
 
   async reconnectToStream(): Promise<ReadableStream<UIMessageChunk> | null> {
     // Client-side AI doesn't support stream reconnection
-    return null;
+    return await Promise.resolve(null);
   }
 }

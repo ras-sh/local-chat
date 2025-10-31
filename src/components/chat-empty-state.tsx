@@ -4,6 +4,7 @@ import {
   ConversationScrollButton,
 } from "~/components/ai-elements/conversation";
 import { Suggestion } from "~/components/ai-elements/suggestion";
+import { Alert, AlertDescription } from "~/components/ui/alert";
 import {
   Empty,
   EmptyContent,
@@ -12,11 +13,9 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "~/components/ui/empty";
+import { useBrowserAISupport } from "~/hooks/use-browser-ai-support";
 
 type ChatEmptyStateProps = {
-  browserSupportsModel: boolean | null;
-  suggestions: string[];
-  isLoading: boolean;
   onSuggestionClick: (suggestion: string) => void;
 };
 
@@ -27,38 +26,32 @@ const DEFAULT_SUGGESTIONS = [
   "What is the meaning of life?",
 ];
 
-export function ChatEmptyState({
-  browserSupportsModel,
-  suggestions,
-  isLoading,
-  onSuggestionClick,
-}: ChatEmptyStateProps) {
-  if (!browserSupportsModel) {
-    return (
-      <Conversation>
-        <ConversationScrollButton />
-        <ConversationContent>
-          <div className="flex min-h-[40vh] items-start justify-center pt-12">
-            <div className="max-w-lg rounded-lg border border-zinc-800 bg-zinc-900/50 p-6">
-              <p className="font-sans text-lg text-zinc-300 leading-relaxed">
-                Your browser doesn't support built-in AI. Please use Chrome 128+ or
-                Edge 138+.
-              </p>
-            </div>
-          </div>
-        </ConversationContent>
-      </Conversation>
-    );
-  }
+export function ChatEmptyState({ onSuggestionClick }: ChatEmptyStateProps) {
+  const browserSupportsModel = useBrowserAISupport();
+  const isDisabled = browserSupportsModel === false;
 
   return (
     <Conversation>
       <ConversationScrollButton />
-      <ConversationContent>
+      {browserSupportsModel === false && (
+        <div className="-translate-x-1/2 absolute top-4 left-1/2 z-10 w-full max-w-2xl px-4">
+          <Alert variant="destructive">
+            <AlertDescription>
+              Your browser doesn't support built-in AI. Please use Chrome 128+
+              or Edge 138+.
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
+      <ConversationContent className="flex min-h-full items-center justify-center">
         <Empty className="border-0">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <img alt="Assistant" className="h-6 w-6" src="/favicon-32x32.png" />
+              <img
+                alt="Assistant"
+                className="h-6 w-6"
+                src="/favicon-32x32.png"
+              />
             </EmptyMedia>
             <EmptyTitle>Start a conversation</EmptyTitle>
             <EmptyDescription>
@@ -67,21 +60,14 @@ export function ChatEmptyState({
           </EmptyHeader>
           <EmptyContent>
             <div className="flex w-full flex-wrap justify-center gap-2">
-              {suggestions.length > 0 && !isLoading
-                ? suggestions.map((suggestion, index) => (
-                    <Suggestion
-                      key={index}
-                      onClick={onSuggestionClick}
-                      suggestion={suggestion}
-                    />
-                  ))
-                : DEFAULT_SUGGESTIONS.map((suggestion, index) => (
-                    <Suggestion
-                      key={index}
-                      onClick={onSuggestionClick}
-                      suggestion={suggestion}
-                    />
-                  ))}
+              {DEFAULT_SUGGESTIONS.map((suggestion, index) => (
+                <Suggestion
+                  disabled={isDisabled}
+                  key={index}
+                  onClick={onSuggestionClick}
+                  suggestion={suggestion}
+                />
+              ))}
             </div>
           </EmptyContent>
         </Empty>

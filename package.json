@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "private": true,
-  "description": "Local-only LLM chat application powered by WebLLM - chat.ras.sh",
+  "description": "💬 AI chat that runs entirely in your browser. No servers, no tracking, complete privacy.",
   "keywords": [
     "chat",
     "llm",

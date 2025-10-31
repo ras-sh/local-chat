@@ -1,56 +1,69 @@
 # chat.ras.sh
 
-Local-only LLM chat application powered by WebLLM. Your conversations stay in your browser and are never sent to external servers.
+💬 AI chat that runs entirely in your browser. No servers, no tracking, complete privacy.
+
+## Overview
+
+A privacy-first chat interface that leverages your browser's built-in AI capabilities. All inference happens locally on your device - your conversations never leave your browser.
+
+**Supported browsers:**
+- Chrome 128+ (Gemini Nano)
+- Edge 138+ (Phi-4 Mini)
 
 ## Features
 
-- **100% Local** - All LLM inference runs in your browser via WebLLM
-- **Privacy First** - No data sent to external servers, all processing in-browser
-- **Multiple Models** - Choose from Qwen, Llama, Phi and other open-source models
+- **100% Local** - All AI inference runs directly in your browser
+- **Complete Privacy** - Zero external API calls, no data collection
+- **Smart Suggestions** - Get contextual follow-up questions after each response
 - **Streaming Responses** - Real-time AI responses as they generate
-- **Clear Loading States** - Visual indicators for downloading, thinking, and streaming
-- **Modern UI** - Built with TanStack Start, React 19, and Tailwind CSS
+- **Modern UI** - Clean, responsive interface with dark mode
+- **Model Download Progress** - Visual indicators when downloading models
 
 ## Tech Stack
 
 - [TanStack Start](https://tanstack.com/start) - Full-stack React framework
-- [@built-in-ai/web-llm](https://github.com/built-in-ai/web-llm) - Browser-based LLM inference
+- [@built-in-ai/core](https://github.com/built-in-ai/core) - Browser Built-in AI integration
 - [AI SDK](https://ai-sdk.dev/) - Streaming and message handling
-- TypeScript + Tailwind CSS + @ras-sh/ui components
+- React 19, TypeScript, Tailwind CSS
 
 ## Quick Start
 
 ```bash
+# Install dependencies
 pnpm install
+
+# Start development server
 pnpm dev
 ```
 
-Open http://localhost:5173 in your browser.
+Open http://localhost:3000 in Chrome 128+ or Edge 138+.
 
-## Browser Requirements
+## How It Works
 
-This app requires a modern browser with WebGPU support:
+This app uses the experimental Browser Built-in AI APIs that are currently available in Chrome and Edge. On first use, the AI model (Gemini Nano in Chrome or Phi-4 Mini in Edge) will be downloaded and cached locally.
 
-- Chrome 113+ or Edge 113+
-- Firefox Nightly (with WebGPU enabled)
-- Safari Technology Preview 163+
+All processing happens on your device using WebGPU for hardware acceleration. No data is sent to external servers.
 
-## Usage
+## Project Structure
 
-1. Click "Start New Conversation" to begin
-2. Select a model from the dropdown (first load will download the model)
-3. Type your message and press Send
-4. AI responses stream in real-time
-5. Conversations are kept in memory (refresh will clear history)
-
-### Model Selection
-
-Available models (downloaded on first use):
-
-- **Qwen3 0.6B** - Fast and lightweight (~600MB)
-- **Llama 3.2 1B** - Balanced performance (~1GB)
-- **Llama 3.2 3B** - Better quality responses (~3GB)
-- **Phi 4 Mini** - Microsoft's efficient model (~2GB)
+```
+src/
+├── routes/
+│   ├── __root.tsx              # Root layout
+│   └── index.tsx               # Main chat interface
+├── components/
+│   ├── chat-empty-state.tsx    # Empty state with suggestions
+│   ├── chat-input.tsx          # Message input component
+│   ├── chat-messages.tsx       # Message list display
+│   ├── header.tsx              # App header
+│   └── footer.tsx              # App footer
+├── lib/
+│   └── client-side-chat-transport.ts  # Browser AI integration
+├── hooks/
+│   └── use-browser-ai-support.ts      # Browser compatibility check
+└── types/
+    └── ui-message.ts           # Message type definitions
+```
 
 ## Scripts
 
@@ -60,37 +73,35 @@ Available models (downloaded on first use):
 | `pnpm build` | Build for production |
 | `pnpm preview` | Preview production build |
 | `pnpm check-types` | TypeScript type checking |
-| `pnpm check` | Lint code |
+| `pnpm check` | Lint code with Biome |
 | `pnpm fix` | Auto-fix linting issues |
 
-## Project Structure
+## Browser Requirements
 
-```
-src/
-├── routes/
-│   ├── __root.tsx      # Root layout with metadata
-│   └── index.tsx       # Main chat interface
-├── components/
-│   ├── chat-input.tsx       # Message input component
-│   ├── chat-message.tsx     # Message display component
-│   └── conversation-list.tsx # Sidebar conversation list
-├── lib/
-│   ├── ai.ts           # WebLLM integration
-│   ├── types.ts        # TypeScript type definitions
-│   └── seo.ts          # SEO utilities
-```
+This app requires a browser with Built-in AI support:
+
+- **Chrome 128+** with Gemini Nano enabled
+- **Edge 138+** with Phi-4 Mini enabled
+
+If your browser doesn't support Built-in AI, you'll see a warning message on the chat interface.
 
 ## Privacy & Data
 
-- All conversations kept in memory (not persisted)
-- No data sent to external servers
-- Models downloaded once and cached locally
-- Refresh the page to clear conversation history
+- **No external servers** - All processing happens in your browser
+- **No data collection** - Your conversations are never logged or sent anywhere
+- **No persistence** - Messages are kept in memory only (refresh to clear)
+- **Local model caching** - Downloaded models are cached by the browser
+
+## Development
+
+Built with modern web technologies:
+
+- **React 19** for UI components
+- **TanStack Start** for full-stack React
+- **AI SDK** for streaming message handling
+- **Tailwind CSS** for styling
+- **Biome** for linting and formatting
 
 ## License
 
-MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Author
-
-Built by [Richard Solomou](https://ras.sh)
+MIT License - see [LICENSE](LICENSE) for details.

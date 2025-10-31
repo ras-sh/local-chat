@@ -11,6 +11,7 @@ import {
 import { Suggestion, Suggestions } from "~/components/ai-elements/suggestion";
 import { FileUpload, type FileUploadRef } from "~/components/file-upload";
 import { Button } from "~/components/ui/button";
+import { useBrowserAISupport } from "~/hooks/use-browser-ai-support";
 import type { ExtendedBuiltInAIUIMessage } from "~/types/ui-message";
 
 type ChatInputProps = {
@@ -41,24 +42,29 @@ export function ChatInput({
   showSuggestions,
 }: ChatInputProps) {
   const fileUploadRef = useRef<FileUploadRef>(null);
+  const browserSupportsModel = useBrowserAISupport();
+  const isDisabled = browserSupportsModel === false || isLoading;
 
   return (
     <div className="space-y-3">
       {/* Suggestions from model */}
-      {showSuggestions && suggestions.length > 0 && !isLoading && (
-        <Suggestions>
-          {suggestions.map((suggestion, index) => (
-            <Suggestion
-              key={index}
-              onClick={onSuggestionClick}
-              suggestion={suggestion}
-            />
-          ))}
-        </Suggestions>
-      )}
+      {showSuggestions &&
+        suggestions.length > 0 &&
+        !isLoading &&
+        browserSupportsModel !== false && (
+          <Suggestions>
+            {suggestions.map((suggestion, index) => (
+              <Suggestion
+                key={index}
+                onClick={onSuggestionClick}
+                suggestion={suggestion}
+              />
+            ))}
+          </Suggestions>
+        )}
 
       <FileUpload
-        disabled={isLoading}
+        disabled={isDisabled}
         files={files}
         onFilesChange={onFilesChange}
         ref={fileUploadRef}
@@ -68,7 +74,7 @@ export function ChatInput({
         <PromptInputBody>
           <PromptInputTextarea
             autoFocus
-            disabled={isLoading}
+            disabled={isDisabled}
             onChange={(e) => onInputChange(e.target.value)}
             placeholder="Ask anything..."
             value={input}
@@ -76,7 +82,7 @@ export function ChatInput({
         </PromptInputBody>
         <PromptInputFooter>
           <Button
-            disabled={isLoading}
+            disabled={isDisabled}
             onClick={() => fileUploadRef.current?.openFileDialog()}
             size="icon"
             type="button"
@@ -86,7 +92,7 @@ export function ChatInput({
           </Button>
           <PromptInputSubmit
             disabled={
-              isLoading || (!input.trim() && (!files || files.length === 0))
+              isDisabled || (!input.trim() && (!files || files.length === 0))
             }
             onClick={
               status === "submitted" || status === "streaming"
