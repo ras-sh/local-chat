@@ -29,7 +29,7 @@ export function ChatMessages({
 }: ChatMessagesProps) {
   return (
     <Conversation>
-      <ConversationScrollButton />
+      <ConversationScrollButton data-umami-event="scroll_to_bottom_clicked" />
       <ConversationContent>
         <div className="space-y-4 p-4">
           {messages.map((message) => (
@@ -132,6 +132,7 @@ export function ChatMessages({
                 An error occurred. Please try again.
               </p>
               <Button
+                data-umami-event="message_regenerated"
                 disabled={status === "streaming" || status === "submitted"}
                 onClick={onRegenerate}
                 size="sm"

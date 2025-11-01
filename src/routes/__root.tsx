@@ -62,6 +62,13 @@ export const Route = createRootRoute({
       { rel: "manifest", href: "/site.webmanifest", color: "#fffff" },
       { rel: "icon", href: "/favicon.ico" },
     ],
+    scripts: [
+      {
+        src: "https://u.tronite.com/script.js",
+        defer: true,
+        "data-website-id": "84175d66-3d90-4758-89a7-a82f213293a6",
+      },
+    ],
   }),
   errorComponent: DefaultCatchBoundary,
   notFoundComponent: () => <NotFound />,

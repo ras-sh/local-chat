@@ -58,6 +58,8 @@ export function BrowserUnsupportedDialog() {
 
               <a
                 className="inline-flex items-center text-orange-300 underline hover:text-orange-300"
+                data-umami-event="learn_more_clicked"
+                data-umami-event-location="unsupported_dialog"
                 href="https://developer.chrome.com/docs/ai/built-in"
                 rel="noopener noreferrer"
                 target="_blank"

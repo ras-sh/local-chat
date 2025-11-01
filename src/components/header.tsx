@@ -16,6 +16,7 @@ export function Header() {
           </h1>
 
           <Button
+            data-umami-event="mobile_menu_toggled"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             size="icon"
             variant="ghost"
@@ -40,6 +41,8 @@ export function Header() {
 
               <Button asChild className="w-full" size="sm">
                 <a
+                  data-umami-event="github_link_clicked"
+                  data-umami-event-location="mobile_menu"
                   href="https://github.com/ras-sh/chat"
                   rel="noopener noreferrer"
                   target="_blank"
@@ -63,6 +66,8 @@ export function Header() {
 
             <Button asChild>
               <a
+                data-umami-event="github_link_clicked"
+                data-umami-event-location="desktop_header"
                 href="https://github.com/ras-sh/chat"
                 rel="noopener noreferrer"
                 target="_blank"

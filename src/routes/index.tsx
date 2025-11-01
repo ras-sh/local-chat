@@ -73,6 +73,9 @@ export default function Home() {
       status !== "streaming";
 
     if (canSubmit) {
+      // Track message submission
+      window.umami?.track("message_submitted");
+
       sendMessage({
         text: input,
         files,

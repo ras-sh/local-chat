@@ -57,6 +57,9 @@ export function ChatInput({
           <Suggestions>
             {suggestions.map((suggestion, index) => (
               <Suggestion
+                data-umami-event="suggestion_clicked"
+                data-umami-event-index={index}
+                data-umami-event-source="chat_input"
                 key={index}
                 onClick={onSuggestionClick}
                 suggestion={suggestion}
@@ -85,6 +88,7 @@ export function ChatInput({
         </PromptInputBody>
         <PromptInputFooter>
           <Button
+            data-umami-event="file_upload_opened"
             disabled={isInputDisabled}
             onClick={() => fileUploadRef.current?.openFileDialog()}
             size="icon"
@@ -94,6 +98,11 @@ export function ChatInput({
             <Paperclip className="h-4 w-4" />
           </Button>
           <PromptInputSubmit
+            data-umami-event={
+              status === "submitted" || status === "streaming"
+                ? "message_stopped"
+                : undefined
+            }
             disabled={
               status === "submitted" || status === "streaming"
                 ? false

@@ -45,6 +45,9 @@ export function ChatEmptyState({ onSuggestionClick }: ChatEmptyStateProps) {
             <div className="flex w-full flex-wrap justify-center gap-2">
               {DEFAULT_SUGGESTIONS.map((suggestion, index) => (
                 <Suggestion
+                  data-umami-event="suggestion_clicked"
+                  data-umami-event-index={index}
+                  data-umami-event-source="empty_state"
                   disabled={isDisabled}
                   key={index}
                   onClick={onSuggestionClick}
@@ -56,7 +59,7 @@ export function ChatEmptyState({ onSuggestionClick }: ChatEmptyStateProps) {
         </Empty>
       </ConversationContent>
 
-      <ConversationScrollButton />
+      <ConversationScrollButton data-umami-event="scroll_to_bottom_clicked" />
     </Conversation>
   );
 }

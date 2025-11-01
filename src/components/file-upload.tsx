@@ -81,6 +81,7 @@ export const FileUpload = ({
               )}
               <button
                 className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white opacity-0 transition-opacity hover:bg-red-600 group-hover:opacity-100"
+                data-umami-event="file_removed"
                 onClick={() => removeFile(index)}
                 type="button"
               >
